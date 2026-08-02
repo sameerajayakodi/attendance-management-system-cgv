@@ -1,0 +1,12 @@
+# SAMS web API
+#
+# The prototype's own dependencies (opencv-python, numpy, matplotlib, pandas)
+# are listed in prototype/requirements.txt and are needed as well — this server
+# imports the prototype package rather than reimplementing it.
+#
+#     python -m pip install -r prototype/requirements.txt
+#     python -m pip install -r web/api/requirements.txt
+
+fastapi>=0.110
+uvicorn>=0.27
+python-multipart>=0.0.9      # required by FastAPI for multipart file uploads

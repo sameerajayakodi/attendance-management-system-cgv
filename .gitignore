@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+
+# Generated pipeline output (regenerate with sams.py) — large, not source
+prototype/output/
+
+# Ephemeral uploads from manual/browser testing of the web API
+web/api/uploads/
+
+# Packaging build artifacts (regenerate with package.py) — duplicate source already in the repo
+/prototype.zip
+/CS402.3_Coursework_Submission.zip
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    info.xml - roster and subject metadata supplied by the administrative staff.
+
+    The structure follows Figure 1 of the CS402.3 coursework brief.  The batch is
+    written as <batch id="..."> rather than as the bare <15> shown in the brief,
+    because an XML element name may not begin with a digit; sams.RosterParser
+    accepts either form.
+
+    The order of the <student> elements is significant: it must match the order
+    of the rows printed on the signing sheet.
+-->
+<nsbm>
+    <subject>
+        <code>CS402.3</code>
+        <title>Computer Graphics and Visualization</title>
+        <lecturer>Dr. Rasika Ranaweera</lecturer>
+        <programme>BSc (Hons) in Software Engineering</programme>
+    </subject>
+    <students>
+        <batches>
+            <batch id="2016.1">
+                <student>
+                    <index>10000409</index>
+                    <title>Ms</title>
+                    <name>M S Dilshanika Perera</name>
+                </student>
+                <student>
+                    <index>10009301</index>
+                    <title>Mr</title>
+                    <name>C W M A Shehan Abeyrathne</name>
+                </student>
+                <student>
+                    <index>10009302</index>
+                    <title>Mr</title>
+                    <name>B A K M Chithrananda</name>
+                </student>
+                <student>
+                    <index>10009303</index>
+                    <title>Ms</title>
+                    <name>W Shashini Minosha De Silva</name>
+                </student>
+                <student>
+                    <index>10009304</index>
+                    <title>Mr</title>
+                    <name>K L Udara Maduranga Liyanage</name>
+                </student>
+                <student>
+                    <index>10009306</index>
+                    <title>Mr</title>
+                    <name>Hansa Anuradha Wickramanayake</name>
+                </student>
+            </batch>
+        </batches>
+    </students>
+</nsbm>

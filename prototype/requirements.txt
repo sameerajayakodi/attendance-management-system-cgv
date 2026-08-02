@@ -1,0 +1,16 @@
+# SAMS - Student Attendance Management System
+# CS402.3 Computer Graphics and Visualization, coursework prototype
+#
+# Only four third-party packages are needed.  The descriptors used for signature
+# recognition (HOG, zoning) are implemented in the project itself rather than
+# imported, so scikit-image, scikit-learn and SciPy are deliberately NOT
+# dependencies - see attendance/verify.py.
+#
+#     python -m pip install -r requirements.txt
+
+opencv-python>=4.8            # image processing; tested on 4.8 and 5.0
+numpy>=1.24                   # array arithmetic
+matplotlib>=3.7               # data visualisation
+pandas>=2.0                   # tabular handling in the reporting helpers
+
+# Standard library only: sqlite3, xml.etree, csv, argparse, dataclasses, unittest
