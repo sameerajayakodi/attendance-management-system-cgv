@@ -52,6 +52,7 @@ the text follows the role, not the person.
 ```bash
 cd prototype
 python -m pip install -r requirements.txt
+python -m pip install -r ../web/api/requirements.txt   # needed by tests/test_web_api.py
 python sams.py "data/sheets/*.jpeg" data/info.xml --show
 python infovis.py 10000409
 python investigate.py 10000409
