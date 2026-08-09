@@ -141,6 +141,10 @@ class RosterParser:
         roster = Roster()
         self._read_subject(root, roster)
 
+        # Built once and reused for every student - walking the whole tree per
+        # student made parsing O(students x elements) instead of O(elements).
+        parents = {child: parent for parent in root.iter() for child in parent}
+
         for element in root.iter():
             if self._localname(element.tag) != "student":
                 continue
@@ -149,7 +153,7 @@ class RosterParser:
             if not index_no:
                 continue
             title = self._first_child_text(element, ("title", "salutation")) or ""
-            batch = self._batch_of(root, element) or roster.batch
+            batch = self._batch_of(parents, element) or roster.batch
             roster.students.append(
                 Student(index_no=index_no, name=name or "(unknown)", title=title, batch=batch)
             )
@@ -193,9 +197,14 @@ class RosterParser:
                 return str(element.attrib[name]).strip()
         return ""
 
-    def _batch_of(self, root: ElementTree.Element, student: ElementTree.Element) -> str:
-        """Walk up from ``student`` looking for the enclosing batch element."""
-        parents = {child: parent for parent in root.iter() for child in parent}
+    def _batch_of(
+        self, parents: dict[ElementTree.Element, ElementTree.Element], student: ElementTree.Element
+    ) -> str:
+        """Walk up from ``student`` looking for the enclosing batch element.
+
+        ``parents`` is the whole document's ``{child: parent}`` map, built once
+        by the caller and reused for every student.
+        """
         node: ElementTree.Element | None = student
         while node is not None:
             if self._localname(node.tag) == "batch":
