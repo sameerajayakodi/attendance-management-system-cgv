@@ -169,7 +169,9 @@ class AttendancePipeline:
         if detected != expected:
             result.warnings.append(
                 f"the sheet yielded {detected} data rows but info.xml lists {expected} students; "
-                f"the first {min(detected, expected)} rows were matched"
+                f"rows are matched positionally from the top, so if the missing/extra row is not "
+                f"the last one, every student below it may be paired with the wrong signature cell. "
+                f"Only the first {min(detected, expected)} rows were matched - check this sheet by eye."
             )
             self._reporter.message(f"WARNING: {result.warnings[-1]}")
 
