@@ -242,6 +242,12 @@ class AttendanceRepository:
     def sessions(self) -> list[sqlite3.Row]:
         return list(self._connection.execute("SELECT * FROM sessions ORDER BY session_date"))
 
+    def session_source_image(self, session_date: str) -> str | None:
+        record = self._connection.execute(
+            "SELECT source_image FROM sessions WHERE session_date = ?", (session_date,)
+        ).fetchone()
+        return record["source_image"] if record else None
+
     def students(self) -> list[Student]:
         rows = self._connection.execute("SELECT * FROM students ORDER BY index_no")
         return [Student(index_no=r["index_no"], name=r["name"], title=r["title"], batch=r["batch"]) for r in rows]
@@ -310,6 +316,40 @@ class AttendanceRepository:
                 specimens.append((record["session_date"], image, mask))
         return specimens
 
+    def signature_specimen(
+        self, index_no: str, session_date: str
+    ) -> tuple[str, np.ndarray, np.ndarray | None] | None:
+        """One signature specimen, decoded without touching the student's other images."""
+        record = self._connection.execute(
+            """
+            SELECT s.session_date, sig.image_png, sig.mask_png
+            FROM signatures sig
+            JOIN attendance a ON a.id = sig.attendance_id
+            JOIN sessions   s ON s.id = a.session_id
+            WHERE a.index_no = ? AND a.status = 'PRESENT' AND s.session_date = ?
+            """,
+            (index_no, session_date),
+        ).fetchone()
+        if record is None:
+            return None
+        image = self._decode(record["image_png"], cv2.IMREAD_COLOR)
+        if image is None:
+            return None
+        mask = self._decode(record["mask_png"], cv2.IMREAD_GRAYSCALE)
+        return (record["session_date"], image, mask)
+
+    def signature_counts(self) -> dict[str, int]:
+        """Number of stored signature specimens per student, without decoding any images."""
+        cursor = self._connection.execute(
+            """
+            SELECT a.index_no, COUNT(*) AS n
+            FROM signatures sig
+            JOIN attendance a ON a.id = sig.attendance_id
+            GROUP BY a.index_no
+            """
+        )
+        return {record["index_no"]: int(record["n"]) for record in cursor}
+
     @staticmethod
     def _decode(blob: bytes | None, flags: int) -> np.ndarray | None:
         if not blob:
@@ -338,8 +378,11 @@ class AttendanceRepository:
             return [record["index_no"] for record in exact]
         if len(query) < self.MIN_SUFFIX_LENGTH:
             return []
+        # Escape LIKE's own wildcards so a literal "_" or "%" in the query
+        # cannot match characters that were never part of the query.
+        escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         like = self._connection.execute(
-            "SELECT index_no FROM students WHERE index_no LIKE ?", (f"%{query}",)
+            "SELECT index_no FROM students WHERE index_no LIKE ? ESCAPE '\\'", (f"%{escaped}",)
         ).fetchall()
         return [record["index_no"] for record in like]
 
