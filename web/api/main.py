@@ -14,11 +14,12 @@ never disagree about what the system does.
 from __future__ import annotations
 
 import re
+import shutil
 import sys
 import time
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 # --- make the coursework package importable ------------------------------- #
 API_DIR = Path(__file__).resolve().parent
@@ -97,7 +98,7 @@ def sheet_stem(source_image: str) -> str:
 _UNSAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
 
-def safe_upload_name(filename: str) -> str:
+def safe_upload_name(filename: str, exists: Callable[[str], bool]) -> str:
     """Reduce an uploaded file name to something safe to put on disk and in a URL.
 
     Real photographs arrive with names like
@@ -105,13 +106,24 @@ def safe_upload_name(filename: str) -> str:
     the stage-image directory and therefore part of a URL path, so the spaces
     have to go; taking only ``Path(...).name`` first also drops any directory
     component a client might have put in the field.
+
+    Two different photographs can sanitise to the same stem (two phones both
+    naming a file ``IMG_0001.jpg``), so ``exists`` is consulted and a numeric
+    suffix is appended until the name is free - the second upload never
+    silently overwrites the first.
     """
     base = Path(filename).name
     stem, suffix = Path(base).stem, Path(base).suffix
     cleaned = _UNSAFE_NAME.sub("_", stem).strip("._-")
     if not cleaned:
         cleaned = f"sheet_{int(time.time())}"
-    return f"{cleaned}{suffix.lower()}"
+    suffix = suffix.lower()
+    candidate = f"{cleaned}{suffix}"
+    attempt = 1
+    while exists(candidate):
+        attempt += 1
+        candidate = f"{cleaned}_{attempt}{suffix}"
+    return candidate
 
 
 STAGE_LABELS = [
@@ -249,9 +261,11 @@ def overview() -> dict[str, Any]:
         overall = sum(1 for r in rows if r.present) / len(rows) * 100 if rows else 0.0
 
         by_session: dict[str, dict[str, int]] = {}
+        by_student: dict[str, list] = {}
         for row in rows:
             bucket = by_session.setdefault(row.session_date, {"present": 0, "absent": 0})
             bucket["present" if row.present else "absent"] += 1
+            by_student.setdefault(row.index_no, []).append(row)
 
         matrix = [
             {
@@ -264,8 +278,7 @@ def overview() -> dict[str, Any]:
                         "status": row.status,
                         "inkRatio": round(row.ink_ratio, 5),
                     }
-                    for row in rows
-                    if row.index_no == student.index_no
+                    for row in by_student.get(student.index_no, [])
                 ],
             }
             for student in students
@@ -323,23 +336,28 @@ def get_session(session_date: str) -> dict[str, Any]:
 
 
 @app.post("/api/sessions", status_code=201)
-async def process_sheet(
+def process_sheet(
     file: UploadFile = File(...),
     session_date: str | None = Form(default=None),
 ) -> dict[str, Any]:
-    """Upload a signing-sheet photograph, run the pipeline, store the result."""
+    """Upload a signing-sheet photograph, run the pipeline, store the result.
+
+    A plain ``def`` route (not ``async def``): the pipeline is CPU-bound
+    OpenCV work, and FastAPI only offloads plain ``def`` routes to a
+    threadpool.  An ``async def`` version of this handler would run the whole
+    imaging pipeline on the single event-loop thread and stall every other
+    request - health checks, dashboard polling, other students' pages - for
+    however long one sheet takes to process.
+    """
     if not file.filename:
         raise HTTPException(status_code=400, detail="no file was uploaded")
     suffix = Path(file.filename).suffix.lower()
     if suffix not in {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}:
         raise HTTPException(status_code=400, detail=f"'{suffix}' is not a supported image type")
 
-    payload = await file.read()
+    payload = file.file.read()
     if not payload:
         raise HTTPException(status_code=400, detail="the uploaded file is empty")
-
-    target = UPLOAD_DIR / safe_upload_name(file.filename)
-    target.write_bytes(payload)
 
     chosen: date | None = None
     if session_date:
@@ -348,25 +366,38 @@ async def process_sheet(
         except ValueError:
             raise HTTPException(status_code=400, detail="date must be formatted as YYYY-MM-DD") from None
 
-    book = roster()
-    stem = target.stem
-    reporter = StageWriter(DEFAULT_SETTINGS.stage_dir, stem)
-    pipeline = AttendancePipeline(DEFAULT_SETTINGS, book, reporter)
+    decoded = cv2.imdecode(np.frombuffer(payload, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if decoded is None:
+        raise HTTPException(status_code=400, detail="the uploaded file is not a readable image")
 
-    started = time.perf_counter()
+    target = UPLOAD_DIR / safe_upload_name(file.filename, exists=lambda name: (UPLOAD_DIR / name).exists())
+    target.write_bytes(payload)
+
     try:
-        result: SessionResult = pipeline.process(target, session_date=chosen)
-    except TableDetectionError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
-    except (ValueError, FileNotFoundError) as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    reporter.end(result.artifacts)
-    elapsed = (time.perf_counter() - started) * 1000.0
+        book = roster()
+        stem = target.stem
+        reporter = StageWriter(DEFAULT_SETTINGS.stage_dir, stem)
+        pipeline = AttendancePipeline(DEFAULT_SETTINGS, book, reporter)
 
-    with repository() as repo:
-        pipeline.persist(result, repo)
-        record = next(r for r in repo.sessions() if r["session_date"] == result.session_date.isoformat())
-        payload_out = session_payload(record, outcomes_for(repo, record["session_date"]))
+        started = time.perf_counter()
+        try:
+            result: SessionResult = pipeline.process(target, session_date=chosen)
+        except TableDetectionError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        except (ValueError, FileNotFoundError) as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        reporter.end(result.artifacts)
+        elapsed = (time.perf_counter() - started) * 1000.0
+
+        with repository() as repo:
+            pipeline.persist(result, repo)
+            record = next(r for r in repo.sessions() if r["session_date"] == result.session_date.isoformat())
+            payload_out = session_payload(record, outcomes_for(repo, record["session_date"]))
+    except Exception:
+        # The photo is only worth keeping once a session row references it;
+        # on any failure it is orphaned disk usage with nothing pointing at it.
+        target.unlink(missing_ok=True)
+        raise
 
     payload_out["warnings"] = result.warnings
     payload_out["elapsedMs"] = round(elapsed, 1)
@@ -379,13 +410,26 @@ async def process_sheet(
     return payload_out
 
 
+def _remove_session_files(source_image: str, stem: str) -> None:
+    """Best-effort cleanup of the files a session left on disk."""
+    source = Path(source_image)
+    for candidate in {source, UPLOAD_DIR / source.name, SHEET_DIR / source.name}:
+        if candidate.exists() and candidate.is_file():
+            candidate.unlink(missing_ok=True)
+    stage_dir = STAGE_DIR / stem
+    if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
+        shutil.rmtree(stage_dir, ignore_errors=True)
+
+
 @app.delete("/api/sessions/{session_date}", status_code=204)
 def delete_session(session_date: str) -> Response:
     with repository() as repo:
+        source_image = repo.session_source_image(session_date)
+        if source_image is None:
+            raise HTTPException(status_code=404, detail=f"no session on {session_date}")
         with repo.transaction() as connection:
-            cursor = connection.execute("DELETE FROM sessions WHERE session_date = ?", (session_date,))
-            if cursor.rowcount == 0:
-                raise HTTPException(status_code=404, detail=f"no session on {session_date}")
+            connection.execute("DELETE FROM sessions WHERE session_date = ?", (session_date,))
+    _remove_session_files(source_image, sheet_stem(source_image))
     return Response(status_code=204)
 
 
@@ -398,11 +442,11 @@ def delete_session(session_date: str) -> Response:
 def list_students() -> list[dict[str, Any]]:
     with repository() as repo:
         rates = repo.class_attendance_rates()
+        counts = repo.signature_counts()
         payload = []
         for student in repo.students():
             history = repo.history(student.index_no)
             present, total, rate = summarise(history)
-            specimens = repo.signature_specimens(student.index_no)
             payload.append({
                 "indexNo": student.index_no,
                 "name": student.name,
@@ -411,7 +455,7 @@ def list_students() -> list[dict[str, Any]]:
                 "present": present,
                 "total": total,
                 "rate": round(rates.get(student.index_no, rate), 1),
-                "specimens": len(specimens),
+                "specimens": counts.get(student.index_no, 0),
                 "lastSession": history[-1].session_date if history else None,
                 "lastStatus": history[-1].status if history else None,
             })
@@ -592,10 +636,11 @@ def sheet_image(session_date: str, width: int = 1000) -> Response:
 @app.get("/api/media/signature/{index_no}/{session_date}")
 def signature_image(index_no: str, session_date: str) -> Response:
     with repository() as repo:
-        for label, colour, _mask in repo.signature_specimens(index_no):
-            if label == session_date:
-                return png_response(colour)
-    raise HTTPException(status_code=404, detail="signature specimen not found")
+        specimen = repo.signature_specimen(index_no, session_date)
+    if specimen is None:
+        raise HTTPException(status_code=404, detail="signature specimen not found")
+    _label, colour, _mask = specimen
+    return png_response(colour)
 
 
 @app.get("/api/media/signature/{index_no}/{session_date}/normalised")
@@ -603,12 +648,13 @@ def normalised_signature(index_no: str, session_date: str) -> Response:
     """The specimen as the descriptors see it: cropped, warped, binarised."""
     verifier = SignatureVerifier(DEFAULT_SETTINGS)
     with repository() as repo:
-        for label, colour, mask in repo.signature_specimens(index_no):
-            if label == session_date:
-                specimen = verifier.describe(label, colour, mask)
-                canvas = cv2.cvtColor(cv2.bitwise_not(specimen.normalised), cv2.COLOR_GRAY2BGR)
-                return png_response(canvas)
-    raise HTTPException(status_code=404, detail="signature specimen not found")
+        specimen = repo.signature_specimen(index_no, session_date)
+    if specimen is None:
+        raise HTTPException(status_code=404, detail="signature specimen not found")
+    label, colour, mask = specimen
+    described = verifier.describe(label, colour, mask)
+    canvas = cv2.cvtColor(cv2.bitwise_not(described.normalised), cv2.COLOR_GRAY2BGR)
+    return png_response(canvas)
 
 
 # --------------------------------------------------------------------------- #
