@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert, Box, Card, CardContent, IconButton, LinearProgress, Stack, Table, TableBody,
   TableCell, TableContainer, TableHead, TablePagination, TableRow, Tooltip, Typography,
@@ -37,6 +37,11 @@ export default function SessionsPage() {
   }, [data, search]);
 
   const paged = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, rowsPerPage, page]);
 
   return (
     <>

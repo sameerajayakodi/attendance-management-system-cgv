@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box, Card, CardContent, LinearProgress, Stack, Table, TableBody, TableCell,
   TableContainer, TableHead, TablePagination, TableRow, Typography,
@@ -30,6 +30,11 @@ export default function StudentsPage() {
 
   const paged = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   const belowRequirement = (data ?? []).filter((s) => s.rate < METRIC.requiredRate).length;
+
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, rowsPerPage, page]);
 
   return (
     <>
