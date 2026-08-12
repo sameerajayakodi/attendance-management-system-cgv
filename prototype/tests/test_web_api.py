@@ -152,7 +152,7 @@ class UploadAndSessionLifecycleTests(WebApiTestCase):
         # The unreadable payload must not be left behind on disk.
         self.assertEqual(list(api.UPLOAD_DIR.glob("fake*")), [])
 
-    def test_deleting_a_session_removes_its_files_from_disk(self):
+    def test_deleting_a_session_removes_its_stage_images_but_not_the_photograph(self):
         response, _expected = self._upload_synthetic_sheet()
         self.assertEqual(response.status_code, 201, response.text)
         session_date = response.json()["date"]
@@ -165,7 +165,9 @@ class UploadAndSessionLifecycleTests(WebApiTestCase):
         delete_response = self.client.delete(f"/api/sessions/{session_date}")
         self.assertEqual(delete_response.status_code, 204)
 
-        self.assertFalse(uploaded[0].exists())
+        # The delete confirmation promises the photograph is untouched so the
+        # sheet can be reprocessed; only the derived stage-image cache goes.
+        self.assertTrue(uploaded[0].exists())
         self.assertFalse(stage_dirs[0].exists())
 
         # Gone from the database too: a second delete is a 404, not a 204.

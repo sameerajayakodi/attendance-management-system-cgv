@@ -416,12 +416,15 @@ def process_sheet(
     return payload_out
 
 
-def _remove_session_files(source_image: str, stem: str) -> None:
-    """Best-effort cleanup of the files a session left on disk."""
-    source = Path(source_image)
-    for candidate in {source, UPLOAD_DIR / source.name, SHEET_DIR / source.name}:
-        if candidate.exists() and candidate.is_file():
-            candidate.unlink(missing_ok=True)
+def _remove_session_stage_images(stem: str) -> None:
+    """Best-effort cleanup of the derived stage-image cache for a session.
+
+    The source photograph is deliberately left alone: it is not owned by the
+    session record (an upload or a reference sheet under ``SHEET_DIR`` can be
+    the source for other sessions, or just worth keeping), and the UI's delete
+    confirmation promises the photograph is untouched so the sheet can be
+    processed again.
+    """
     stage_dir = STAGE_DIR / stem
     if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
         shutil.rmtree(stage_dir, ignore_errors=True)
@@ -435,7 +438,7 @@ def delete_session(session_date: str) -> Response:
             raise HTTPException(status_code=404, detail=f"no session on {session_date}")
         with repo.transaction() as connection:
             connection.execute("DELETE FROM sessions WHERE session_date = ?", (session_date,))
-    _remove_session_files(source_image, sheet_stem(source_image))
+    _remove_session_stage_images(sheet_stem(source_image))
     return Response(status_code=204)
 
 
