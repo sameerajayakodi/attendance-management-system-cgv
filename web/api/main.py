@@ -394,9 +394,15 @@ def process_sheet(
             record = next(r for r in repo.sessions() if r["session_date"] == result.session_date.isoformat())
             payload_out = session_payload(record, outcomes_for(repo, record["session_date"]))
     except Exception:
-        # The photo is only worth keeping once a session row references it;
-        # on any failure it is orphaned disk usage with nothing pointing at it.
+        # The photo and any per-stage images are only worth keeping once a
+        # session row references them; on any failure they are orphaned disk
+        # usage with nothing pointing at them. The reporter writes stage PNGs
+        # incrementally as each stage completes, so a failure partway through
+        # (e.g. TableDetectionError) can still leave a stage directory behind.
         target.unlink(missing_ok=True)
+        stage_dir = STAGE_DIR / target.stem
+        if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
+            shutil.rmtree(stage_dir, ignore_errors=True)
         raise
 
     payload_out["warnings"] = result.warnings
