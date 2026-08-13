@@ -55,7 +55,7 @@ def print_history(repository: AttendanceRepository, index_no: str) -> None:
     present = sum(1 for row in history if row.present)
     total = len(history)
     rate = present / total * 100 if total else 0.0
-    print("-" * 74)
+    print("-" * divider_length)
     print(f"{'total':<12}{present}/{total} present{'':<4}{rate:>7.1f}%")
 
 
