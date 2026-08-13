@@ -44,7 +44,7 @@ def add_tree(archive: zipfile.ZipFile, source: Path, prefix: str) -> int:
         if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES or not path.is_file():
             continue
         archive.write(path, Path(prefix) / relative)
-        written += 1
+        written += 1  # Increment counter
     return written
 
 
