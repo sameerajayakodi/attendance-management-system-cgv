@@ -16,9 +16,28 @@ import { BRAND_GRADIENT } from "../theme/tokens";
 const EXPANDED = 262;
 const COLLAPSED = 68;
 
-function Brand({ expanded }: { expanded: boolean }) {
-  return (
-    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: expanded ? 2.5 : 1.5, py: 2.25 }}>
+/** The masthead doubles as the way home: clicking it returns to the dashboard. */
+function Brand({ expanded, onNavigate }: { expanded: boolean; onNavigate?: () => void }) {
+  const brand = (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1.5}
+      component={NavLink}
+      to="/"
+      onClick={onNavigate}
+      aria-label="SAMS — go to the dashboard"
+      sx={{
+        px: expanded ? 2.5 : 1.5,
+        py: 2.25,
+        textDecoration: "none",
+        color: "inherit",
+        transition: "background-color .18s ease",
+        "&:hover": {
+          bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.12 : 0.06),
+        },
+      }}
+    >
       <Box
         sx={{
           width: 34, height: 34, borderRadius: 2.5, flexShrink: 0,
@@ -37,6 +56,10 @@ function Brand({ expanded }: { expanded: boolean }) {
         </Box>
       )}
     </Stack>
+  );
+
+  return expanded ? brand : (
+    <Tooltip title="Dashboard" placement="right">{brand}</Tooltip>
   );
 }
 
@@ -103,7 +126,7 @@ export default function AppLayout() {
 
   const content = (
     <Stack sx={{ height: "100%" }}>
-      <Brand expanded={expanded} />
+      <Brand expanded={expanded} onNavigate={() => setMobileOpen(false)} />
       <Divider />
       <Box sx={{ flex: 1, overflowY: "auto", py: 1.5 }}>
         <SidebarMenu expanded={expanded} onNavigate={() => setMobileOpen(false)} />
