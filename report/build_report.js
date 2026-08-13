@@ -25,7 +25,7 @@ const contrib = require("./content_contributions");
 
 // ---------------------------------------------------------------------------
 //  Group members - EDIT THESE TEN LINES BEFORE SUBMISSION
-// ---------------------------------------------------------------------------
+
 
 const MEMBERS = [
   { name: "<< Member 1 - full name >>",  index: "<< index >>", role: "Project Lead and Systems Architect" },
