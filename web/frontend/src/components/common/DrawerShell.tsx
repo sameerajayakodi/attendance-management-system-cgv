@@ -46,14 +46,14 @@ export function DrawerShell({
           </IconButton>
         </Stack>
 
-        <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 2.5 }}>{children}</Box>
+        <Box sx={{ flex: 1, overflowY: "auto", px: 4, py: 3.5 }}>{children}</Box>
 
         {footer && (
           <Stack
             direction="row"
             spacing={1.5}
             justifyContent="flex-end"
-            sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: "divider" }}
+            sx={{ px: 4, py: 3, borderTop: "1px solid", borderColor: "divider" }}
           >
             {footer}
           </Stack>
