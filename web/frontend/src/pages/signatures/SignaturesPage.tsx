@@ -76,7 +76,7 @@ export default function SignaturesPage() {
         </Card>
       ) : (
         <>
-          {/* ── Verdict banner ──────────────────────────────── */}
+          {/*Verdict banner*/}
           <Card
             sx={{
               mb: 2.5,
@@ -106,7 +106,7 @@ export default function SignaturesPage() {
             </CardContent>
           </Card>
 
-          {/* ── Specimens ───────────────────────────────────── */}
+          {/*Specimens*/}
           <Card sx={{ mb: 2.5 }}>
             <CardContent>
               <Stack
@@ -175,7 +175,7 @@ export default function SignaturesPage() {
             </CardContent>
           </Card>
 
-          {/* ── Similarity matrix ───────────────────────────── */}
+          {/*Similarity matrix*/}
           <Stack direction={{ xs: "column", lg: "row" }} spacing={2.5}>
             <Card sx={{ flex: 1, minWidth: 0 }}>
               <CardContent>

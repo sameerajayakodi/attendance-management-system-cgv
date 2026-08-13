@@ -51,7 +51,7 @@ export default function StudentDetailPage() {
         <TableSkeleton rows={8} />
       ) : (
         <>
-          {/* ── Header ──────────────────────────────────────── */}
+          {/*Header*/}
           <Card sx={{ mb: 2.5 }}>
             <CardContent>
               <Stack
@@ -114,7 +114,7 @@ export default function StudentDetailPage() {
             </CardContent>
           </Card>
 
-          {/* ── Timeline ────────────────────────────────────── */}
+          {/*Timeline*/}
           <Card sx={{ mb: 2.5 }}>
             <CardContent>
               <SectionLabel>Session by session</SectionLabel>
@@ -129,7 +129,7 @@ export default function StudentDetailPage() {
             </CardContent>
           </Card>
 
-          {/* ── Charts ──────────────────────────────────────── */}
+          {/*Charts*/}
           <Stack direction={{ xs: "column", lg: "row" }} spacing={2.5} sx={{ mb: 2.5 }}>
             <Card sx={{ flex: 1, minWidth: 0 }}>
               <CardContent>
@@ -203,9 +203,6 @@ export default function StudentDetailPage() {
                           fontSize: 11, fill: theme.palette.text.secondary,
                         }}
                       />
-                      {/* minPointSize keeps a visible stub for a cell that
-                          measured 0.00% ink, so an absent session reads as
-                          "measured, and empty" rather than as missing data. */}
                       <Bar
                         isAnimationActive={false}
                         dataKey="ink"
@@ -227,7 +224,7 @@ export default function StudentDetailPage() {
             </Card>
           </Stack>
 
-          {/* ── History table ───────────────────────────────── */}
+          {/*History table*/}
           <Card sx={{ mb: 2.5 }}>
             <Stack
               direction="row"
@@ -300,7 +297,7 @@ export default function StudentDetailPage() {
             </TableContainer>
           </Card>
 
-          {/* ── Batch comparison ────────────────────────────── */}
+          {/*Batch comparison*/}
           <Card>
             <CardContent>
               <SectionLabel>How this student compares with the batch</SectionLabel>
