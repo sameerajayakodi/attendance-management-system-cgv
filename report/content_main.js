@@ -6,9 +6,7 @@ const K = require("./report_kit");
 const { p, rich, h1, h2, h3, bullet, code, equation, figure, table, pageBreak } = K;
 const { AlignmentType } = K;
 
-// --------------------------------------------------------------------------
 //  Measured results (all produced by prototype/tools/evaluate.py)
-// --------------------------------------------------------------------------
 
 const CELLS = [
   ["10000409", "M S Dilshanika Perera", "15.97 P", "14.67 P", "14.67 P", "13.75 P", "11.51 P", "5/5"],
@@ -31,7 +29,7 @@ const STAGE_TIMES = [
   ["9", "Signature analysis", "Component ownership and thresholding", "25.9", "18.9 - 46.6"],
 ];
 
-// --------------------------------------------------------------------------
+// ------------------------------------------------------------
 
 function titlePage(members) {
   const rows = members.map((m, i) => [String(i + 1), m.index, m.name, m.role]);

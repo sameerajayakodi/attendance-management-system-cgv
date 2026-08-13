@@ -20,9 +20,8 @@ const FIG_DIR = path.join(__dirname, "figures");
 const CONTENT_DXA = 9026;      // A4 minus 1 inch margins
 const CONTENT_PX = 600;
 
-// --------------------------------------------------------------------------
 //  Small helpers
-// --------------------------------------------------------------------------
+
 
 let figureNo = 0;
 let tableNo = 0;
