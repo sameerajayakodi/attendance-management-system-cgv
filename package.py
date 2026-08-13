@@ -30,7 +30,7 @@ EXCLUDED_DIRS: set[str] = {
     "__pycache__", "output", ".pytest_cache", ".git", ".idea", ".vscode",
     "node_modules", "dist", "uploads", ".vite",
 }
-EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".tsbuildinfo"}
+EXCLUDED_SUFFIXES: set[str] = {".pyc", ".pyo", ".tsbuildinfo"}
 EXCLUDED_NAMES = {"package-lock.json", ".DS_Store"}
 
 
