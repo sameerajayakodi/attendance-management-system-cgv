@@ -36,7 +36,7 @@ EXCLUDED_NAMES: set[str] = {"package-lock.json", ".DS_Store"}
 
 def add_tree(archive: zipfile.ZipFile, source: Path, prefix: str) -> int:
     """Add every file under ``source`` to the archive beneath ``prefix``."""
-    written = 0
+    written: int = 0
     for path in sorted(source.rglob("*")):
         relative = path.relative_to(source)
         if any(part in EXCLUDED_DIRS for part in relative.parts):
