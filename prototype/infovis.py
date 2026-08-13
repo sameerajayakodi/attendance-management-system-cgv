@@ -26,6 +26,7 @@ from attendance.visualize import ClassHeatmap, StudentDashboard, StudentSummary,
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
+    """Construct and return the CLI argument parser."""
     parser = argparse.ArgumentParser(
         prog="infovis.py",
         description="Visualise the attendance of one student, or of the whole batch.",
@@ -44,7 +45,8 @@ def print_history(repository: AttendanceRepository, index_no: str) -> None:
     history = repository.history(index_no)
     print(f"\n{repository.student_name(index_no)}   ({index_no})")
     print(f"{'date':<12}{'status':<10}{'ink %':>8}{'conf.':>8}   sheet")
-    print("-" * 74)
+    divider_length = 74
+    print("-" * divider_length)
     for row in history:
         print(
             f"{row.session_date:<12}{row.status:<10}{row.ink_ratio * 100:>8.2f}"
@@ -53,14 +55,14 @@ def print_history(repository: AttendanceRepository, index_no: str) -> None:
     present = sum(1 for row in history if row.present)
     total = len(history)
     rate = present / total * 100 if total else 0.0
-    print("-" * 74)
+    print("-" * divider_length)
     print(f"{'total':<12}{present}/{total} present{'':<4}{rate:>7.1f}%")
 
 
 def main(argv: list[str] | None = None) -> int:
     arguments = build_argument_parser().parse_args(argv)
 
-    database = Path(arguments.db)
+    database: Path = Path(arguments.db)
     if not database.exists():
         print(f"error: no attendance database at '{database}' - run sams.py first", file=sys.stderr)
         return 2
@@ -78,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             print("error: give a student index, or use --class", file=sys.stderr)
             return 2
 
-        candidates = repository.resolve_index(arguments.index)
+        candidates: list[str] = repository.resolve_index(arguments.index)
         if not candidates:
             known = ", ".join(student.index_no for student in repository.students())
             print(f"error: '{arguments.index}' matches no student. Known indices: {known}", file=sys.stderr)

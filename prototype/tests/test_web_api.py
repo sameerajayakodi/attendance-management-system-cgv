@@ -152,7 +152,7 @@ class UploadAndSessionLifecycleTests(WebApiTestCase):
         # The unreadable payload must not be left behind on disk.
         self.assertEqual(list(api.UPLOAD_DIR.glob("fake*")), [])
 
-    def test_deleting_a_session_removes_its_files_from_disk(self):
+    def test_deleting_a_session_removes_its_stage_images_but_not_the_photograph(self):
         response, _expected = self._upload_synthetic_sheet()
         self.assertEqual(response.status_code, 201, response.text)
         session_date = response.json()["date"]
@@ -165,12 +165,36 @@ class UploadAndSessionLifecycleTests(WebApiTestCase):
         delete_response = self.client.delete(f"/api/sessions/{session_date}")
         self.assertEqual(delete_response.status_code, 204)
 
-        self.assertFalse(uploaded[0].exists())
+        # The delete confirmation promises the photograph is untouched so the
+        # sheet can be reprocessed; only the derived stage-image cache goes.
+        self.assertTrue(uploaded[0].exists())
         self.assertFalse(stage_dirs[0].exists())
 
         # Gone from the database too: a second delete is a 404, not a 204.
         self.assertEqual(self.client.delete(f"/api/sessions/{session_date}").status_code, 404)
         self.assertEqual(self.client.get(f"/api/sessions/{session_date}").status_code, 404)
+
+    def test_a_same_dated_session_from_a_different_subject_is_neither_served_nor_deleted(self):
+        """Sessions are unique per (subject_code, session_date), not date alone.
+
+        A second subject sharing the database and, by coincidence, a session
+        date must not leak into this deployment's session routes or be caught
+        by one of its deletes.
+        """
+        response, _expected = self._upload_synthetic_sheet()
+        self.assertEqual(response.status_code, 201, response.text)
+        session_date = response.json()["date"]
+
+        with AttendanceRepository(api.DEFAULT_DATABASE) as repo:
+            repo.upsert_session(subject_code="OTHER101", session_date=session_date, source_image="other.jpeg")
+
+        fetched = self.client.get(f"/api/sessions/{session_date}").json()
+        self.assertEqual(fetched["subjectCode"], "CS402.3")
+
+        self.assertEqual(self.client.delete(f"/api/sessions/{session_date}").status_code, 204)
+        with AttendanceRepository(api.DEFAULT_DATABASE) as repo:
+            remaining = [record["subject_code"] for record in repo.sessions()]
+        self.assertEqual(remaining, ["OTHER101"])
 
     def test_uploading_the_same_filename_twice_does_not_overwrite_the_first(self):
         first, _ = self._upload_synthetic_sheet(filename="01.02.2020.jpeg", signed_rows=(0,))
