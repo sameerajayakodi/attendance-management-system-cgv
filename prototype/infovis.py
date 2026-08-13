@@ -45,7 +45,8 @@ def print_history(repository: AttendanceRepository, index_no: str) -> None:
     history = repository.history(index_no)
     print(f"\n{repository.student_name(index_no)}   ({index_no})")
     print(f"{'date':<12}{'status':<10}{'ink %':>8}{'conf.':>8}   sheet")
-    print("-" * 74)
+    divider_length = 74
+    print("-" * divider_length)
     for row in history:
         print(
             f"{row.session_date:<12}{row.status:<10}{row.ink_ratio * 100:>8.2f}"
