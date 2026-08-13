@@ -26,6 +26,7 @@ from attendance.visualize import ClassHeatmap, StudentDashboard, StudentSummary,
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
+    """Construct and return the CLI argument parser."""
     parser = argparse.ArgumentParser(
         prog="infovis.py",
         description="Visualise the attendance of one student, or of the whole batch.",
