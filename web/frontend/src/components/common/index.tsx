@@ -28,7 +28,7 @@ export function PrimaryButton({ sx, ...props }: ButtonProps) {
         {
           borderRadius: 99,
           px: 2.5,
-          fontWeight: 700,
+          fontWeight: 720,
           boxShadow: (t) => `0 4px 12px ${alpha(t.palette.primary.main, 0.32)}`,
           "&:hover": { boxShadow: (t) => `0 6px 16px ${alpha(t.palette.primary.main, 0.4)}` },
         },
@@ -47,7 +47,7 @@ export function PageHeader({ title, subtitle, actions }: {
       justifyContent="space-between"
       alignItems={{ xs: "flex-start", sm: "center" }}
       spacing={1.5}
-      sx={{ mb: 3 }}
+      sx={{ mb: 4 }}
     >
       <Box>
         <Typography variant="h5">{title}</Typography>
@@ -63,7 +63,7 @@ export function PageHeader({ title, subtitle, actions }: {
 export function EmptyState({ message, hint, action }: { message: string; hint?: string; action?: ReactNode }) {
   return (
     <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
-      <InboxRoundedIcon sx={{ fontSize: 44, mb: 1, opacity: 0.5 }} />
+      <InboxRoundedIcon sx={{ fontSize: 45, mb: 1, opacity: 0.6 }} />
       <Typography variant="body1" sx={{ mb: hint ? 0.5 : action ? 2 : 0 }}>{message}</Typography>
       {hint && <Typography variant="body2" sx={{ mb: action ? 2 : 0, opacity: 0.85 }}>{hint}</Typography>}
       {action}
@@ -76,7 +76,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   return (
     <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
       <ErrorOutlineRoundedIcon color="error" sx={{ fontSize: 44, mb: 1, opacity: 0.8 }} />
-      <Typography variant="body1" sx={{ mb: 0.5 }}>Could not load this view</Typography>
+      <Typography variant="body1" sx={{ mb: 0.6 }}>Could not load this view</Typography>
       <Typography variant="body2" sx={{ mb: onRetry ? 2 : 0, opacity: 0.85 }}>{message}</Typography>
       {onRetry && <Button variant="outlined" size="small" onClick={onRetry}>Try again</Button>}
     </Box>
