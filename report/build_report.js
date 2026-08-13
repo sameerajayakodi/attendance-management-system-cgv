@@ -8,8 +8,6 @@
  * are the PNGs those programs wrote, copied into report/figures by
  * prototype/tools/make_figures.py --copy-to-report.
  *
- * >>> BEFORE SUBMITTING: replace the ten placeholder entries in MEMBERS below
- *     with the real names and index numbers of the group. <<<
  */
 
 const fs = require("fs");
@@ -22,7 +20,6 @@ const {
 const K = require("./report_kit");
 const main = require("./content_main");
 const contrib = require("./content_contributions");
-
 const MEMBERS = [
   { name: "<< Member 1 - full name >>",  index: "<< index >>", role: "Project Lead and Systems Architect" },
   { name: "<< Member 2 - full name >>",  index: "<< index >>", role: "Image Acquisition and Pre-processing Engineer" },
@@ -36,7 +33,7 @@ const MEMBERS = [
   { name: "<< Member 10 - full name >>", index: "<< index >>", role: "Quality Assurance and Evaluation Engineer" },
 ];
 
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------
 
 function runningHeader() {
   return new Header({
