@@ -22,3 +22,6 @@ web/api/uploads/
 # OS/editor cruft
 .DS_Store
 Thumbs.db
+web/api/.venv
+
+PROJECT_ANALYSIS.md

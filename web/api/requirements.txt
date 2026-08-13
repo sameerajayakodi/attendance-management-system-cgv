@@ -10,3 +10,5 @@
 fastapi>=0.110
 uvicorn>=0.27
 python-multipart>=0.0.9      # required by FastAPI for multipart file uploads
+httpx>=0.25                  # required by fastapi.testclient.TestClient (prototype/tests/test_web_api.py)
+opencv-python>=4.8           # image processing

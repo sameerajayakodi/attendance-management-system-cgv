@@ -129,9 +129,17 @@ python tools/evaluate.py
 
 `run_tests.py` uses only the standard library's `unittest`. The suite covers the
 XML parser, the database, the imaging primitives, the table detector and its
-repair rule, the ink classifier, the HOG implementation and the verifier, plus an
-integration test that runs all five reference photographs against
-`data/ground_truth.csv`.
+repair rule, the ink classifier, the HOG implementation and the verifier, the
+FastAPI layer (upload handling, the media path-traversal guard, session
+deletion, student-index disambiguation), plus an integration test that runs
+all five reference photographs against `data/ground_truth.csv`.
+
+`test_web_api.py` imports the FastAPI app, so `web/api/requirements.txt` must
+also be installed before running the full suite:
+
+```bash
+python -m pip install -r ../web/api/requirements.txt
+```
 
 Measured on the five supplied sheets:
 

@@ -122,6 +122,33 @@ class RepositoryTests(unittest.TestCase):
         self._record("2019-05-31", "10000001", "ABSENT", image=specimen())
         self.assertEqual(self.repository.signature_specimens("10000001"), [])
 
+    def test_signature_specimen_fetches_one_date_without_the_others(self):
+        self._record("2019-05-31", "10000001", "PRESENT", image=specimen(200))
+        self._record("2019-06-21", "10000001", "PRESENT", image=specimen(80))
+        found = self.repository.signature_specimen("10000001", "2019-06-21")
+        self.assertIsNotNone(found)
+        date, image, _mask = found
+        self.assertEqual(date, "2019-06-21")
+        self.assertTrue((image[10:30, 10:80] == 80).all())
+
+    def test_signature_specimen_is_none_when_no_match(self):
+        self._record("2019-05-31", "10000001", "PRESENT", image=specimen())
+        self.assertIsNone(self.repository.signature_specimen("10000001", "2019-01-01"))
+        self.assertIsNone(self.repository.signature_specimen("99999999", "2019-05-31"))
+
+    def test_signature_counts_reflects_present_rows_with_a_stored_image(self):
+        self._record("2019-05-31", "10000001", "PRESENT", image=specimen())
+        self._record("2019-06-21", "10000001", "PRESENT", image=specimen())
+        self._record("2019-05-31", "10000002", "ABSENT")
+        counts = self.repository.signature_counts()
+        self.assertEqual(counts.get("10000001"), 2)
+        self.assertNotIn("10000002", counts)
+
+    def test_session_source_image_round_trips(self):
+        self.repository.upsert_session("CS402.3", "2019-05-31", "a.jpeg")
+        self.assertEqual(self.repository.session_source_image("2019-05-31"), "a.jpeg")
+        self.assertIsNone(self.repository.session_source_image("2019-01-01"))
+
     # -- lookups -------------------------------------------------------- #
 
     def test_resolve_index_prefers_an_exact_match(self):
@@ -153,6 +180,33 @@ class RepositoryTests(unittest.TestCase):
         with self.assertRaises(Exception):
             repository.students()
         directory.cleanup()
+
+
+class ResolveIndexWildcardEscapeTests(unittest.TestCase):
+    """A literal ``_``/``%`` in a query must not act as a SQL LIKE wildcard."""
+
+    def setUp(self):
+        self._directory = tempfile.TemporaryDirectory()
+        self.repository = AttendanceRepository(Path(self._directory.name) / "wildcards.db")
+        self.repository.upsert_students(
+            [
+                Student("1_2345", "Underscore Student", "Mr", "2016.1"),
+                Student("192345", "Digit Student", "Ms", "2016.1"),
+            ]
+        )
+
+    def tearDown(self):
+        self.repository.close()
+        self._directory.cleanup()
+
+    def test_a_literal_underscore_in_the_suffix_is_not_a_wildcard(self):
+        # Unescaped, the LIKE pattern "%_2345" treats "_" as "any one
+        # character", so it would also match "...92345".  Escaped, "_2345"
+        # must only match an index that literally ends with "_2345".
+        self.assertEqual(self.repository.resolve_index("_2345"), ["1_2345"])
+
+    def test_the_exact_match_still_wins_regardless_of_wildcard_characters(self):
+        self.assertEqual(self.repository.resolve_index("1_2345"), ["1_2345"])
 
 
 class SummariseTests(unittest.TestCase):
