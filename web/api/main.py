@@ -229,6 +229,23 @@ def outcomes_for(repo: AttendanceRepository, session_date: str) -> list[dict[str
     ]
 
 
+def _remove_session_stage_images(stem: str) -> None:
+    """Best-effort cleanup of the derived stage-image cache for a session.
+
+    The source photograph is deliberately left alone: it is not owned by the
+    session record (an upload or a reference sheet under ``SHEET_DIR`` can be
+    the source for other sessions, or just worth keeping), and the UI's delete
+    confirmation promises the photograph is untouched so the sheet can be
+    processed again.
+
+    Shared by the upload route's failure cleanup and the delete route, so the
+    directory-traversal guard only has to be trusted in one place.
+    """
+    stage_dir = STAGE_DIR / stem
+    if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
+        shutil.rmtree(stage_dir, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- #
 #  Meta
 # --------------------------------------------------------------------------- #
@@ -413,9 +430,7 @@ def process_sheet(
         # incrementally as each stage completes, so a failure partway through
         # (e.g. TableDetectionError) can still leave a stage directory behind.
         target.unlink(missing_ok=True)
-        stage_dir = STAGE_DIR / target.stem
-        if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
-            shutil.rmtree(stage_dir, ignore_errors=True)
+        _remove_session_stage_images(target.stem)
         raise
 
     payload_out["warnings"] = result.warnings
@@ -427,20 +442,6 @@ def process_sheet(
         for a in result.artifacts
     ]
     return payload_out
-
-
-def _remove_session_stage_images(stem: str) -> None:
-    """Best-effort cleanup of the derived stage-image cache for a session.
-
-    The source photograph is deliberately left alone: it is not owned by the
-    session record (an upload or a reference sheet under ``SHEET_DIR`` can be
-    the source for other sessions, or just worth keeping), and the UI's delete
-    confirmation promises the photograph is untouched so the sheet can be
-    processed again.
-    """
-    stage_dir = STAGE_DIR / stem
-    if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
-        shutil.rmtree(stage_dir, ignore_errors=True)
 
 
 @app.delete("/api/sessions/{session_date}", status_code=204)
