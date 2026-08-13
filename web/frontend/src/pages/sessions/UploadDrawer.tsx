@@ -142,14 +142,6 @@ export function UploadDrawer({ open, onClose }: { open: boolean; onClose: () => 
             : "Leave empty to take the date from the file name, as the command-line tool does."
         }
       />
-
-      {/*
-        A session is keyed by its date, so processing a sheet for a date that
-        already exists replaces it. Phone exports make that easy to do by
-        accident — every photo taken on one day carries the same date in its
-        file name — so the collision is stated before the button is pressed,
-        not discovered afterwards.
-      */}
       {clash && (
         <Alert severity="warning" sx={{ mt: 1.5 }}>
           <strong>{longDate(clash.date)}</strong> already holds a session read from{" "}

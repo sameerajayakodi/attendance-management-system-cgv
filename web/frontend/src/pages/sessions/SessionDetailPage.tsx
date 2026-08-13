@@ -127,7 +127,7 @@ export default function SessionDetailPage() {
         <Tab label="Photograph" />
       </Tabs>
 
-      {/* ── Attendance ──────────────────────────────────────── */}
+      {/*Attendance*/}
       {tab === 0 && (
         <Card>
           {isLoading ? (
@@ -222,7 +222,7 @@ export default function SessionDetailPage() {
         </Card>
       )}
 
-      {/* ── Image processing ────────────────────────────────── */}
+      {/*Image processing*/}
       {tab === 1 && (
         <>
           <Card sx={{ mb: 2.5 }}>
@@ -266,7 +266,7 @@ export default function SessionDetailPage() {
         </>
       )}
 
-      {/* ── Photograph ──────────────────────────────────────── */}
+      {/*Photograph*/}
       {tab === 2 && data && (
         <Card>
           <CardContent>
@@ -288,7 +288,7 @@ export default function SessionDetailPage() {
         </Card>
       )}
 
-      {/* ── Lightbox ────────────────────────────────────────── */}
+      {/*Lightbox*/}
       <Dialog open={Boolean(zoom)} onClose={() => setZoom(null)} maxWidth="lg" fullWidth>
         <Stack
           direction="row"
