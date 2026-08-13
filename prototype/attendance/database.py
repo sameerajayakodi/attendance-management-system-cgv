@@ -242,6 +242,18 @@ class AttendanceRepository:
     def sessions(self) -> list[sqlite3.Row]:
         return list(self._connection.execute("SELECT * FROM sessions ORDER BY session_date"))
 
+    def session_by_date(self, subject_code: str, session_date: str) -> sqlite3.Row | None:
+        """The one session for ``subject_code`` on ``session_date``, or ``None``.
+
+        A date alone does not identify a session - the schema's own uniqueness
+        constraint is ``(subject_code, session_date)`` - so callers that need a
+        single, unambiguous session must supply both.
+        """
+        return self._connection.execute(
+            "SELECT * FROM sessions WHERE subject_code = ? AND session_date = ?",
+            (subject_code, session_date),
+        ).fetchone()
+
     def session_source_image(self, session_date: str) -> str | None:
         record = self._connection.execute(
             "SELECT source_image FROM sessions WHERE session_date = ?", (session_date,)

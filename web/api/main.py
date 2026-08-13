@@ -79,6 +79,17 @@ def roster():
         raise HTTPException(status_code=500, detail=f"roster: {error}") from error
 
 
+def subject_code() -> str:
+    """The subject code this deployment is configured for.
+
+    Sessions are only unique per ``(subject_code, session_date)``, so any route
+    that looks up a single session by date must scope the query to this code -
+    otherwise, if the database ever held more than one subject, it would pick
+    whichever session happened to be first rather than the intended one.
+    """
+    return roster().subject.code
+
+
 def png_response(image: np.ndarray, max_age: int = 3600) -> Response:
     ok, encoded = cv2.imencode(".png", image)
     if not ok:
@@ -218,6 +229,23 @@ def outcomes_for(repo: AttendanceRepository, session_date: str) -> list[dict[str
     ]
 
 
+def _remove_session_stage_images(stem: str) -> None:
+    """Best-effort cleanup of the derived stage-image cache for a session.
+
+    The source photograph is deliberately left alone: it is not owned by the
+    session record (an upload or a reference sheet under ``SHEET_DIR`` can be
+    the source for other sessions, or just worth keeping), and the UI's delete
+    confirmation promises the photograph is untouched so the sheet can be
+    processed again.
+
+    Shared by the upload route's failure cleanup and the delete route, so the
+    directory-traversal guard only has to be trusted in one place.
+    """
+    stage_dir = STAGE_DIR / stem
+    if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
+        shutil.rmtree(stage_dir, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- #
 #  Meta
 # --------------------------------------------------------------------------- #
@@ -319,17 +347,19 @@ def overview() -> dict[str, Any]:
 
 @app.get("/api/sessions")
 def list_sessions() -> list[dict[str, Any]]:
+    code = subject_code()
     with repository() as repo:
         return [
             session_payload(record, outcomes_for(repo, record["session_date"]))
             for record in reversed(repo.sessions())
+            if record["subject_code"] == code
         ]
 
 
 @app.get("/api/sessions/{session_date}")
 def get_session(session_date: str) -> dict[str, Any]:
     with repository() as repo:
-        record = next((r for r in repo.sessions() if r["session_date"] == session_date), None)
+        record = repo.session_by_date(subject_code(), session_date)
         if record is None:
             raise HTTPException(status_code=404, detail=f"no session on {session_date}")
         return session_payload(record, outcomes_for(repo, session_date))
@@ -391,12 +421,16 @@ def process_sheet(
 
         with repository() as repo:
             pipeline.persist(result, repo)
-            record = next(r for r in repo.sessions() if r["session_date"] == result.session_date.isoformat())
+            record = repo.session_by_date(result.subject_code, result.session_date.isoformat())
             payload_out = session_payload(record, outcomes_for(repo, record["session_date"]))
     except Exception:
-        # The photo is only worth keeping once a session row references it;
-        # on any failure it is orphaned disk usage with nothing pointing at it.
+        # The photo and any per-stage images are only worth keeping once a
+        # session row references them; on any failure they are orphaned disk
+        # usage with nothing pointing at them. The reporter writes stage PNGs
+        # incrementally as each stage completes, so a failure partway through
+        # (e.g. TableDetectionError) can still leave a stage directory behind.
         target.unlink(missing_ok=True)
+        _remove_session_stage_images(target.stem)
         raise
 
     payload_out["warnings"] = result.warnings
@@ -410,26 +444,19 @@ def process_sheet(
     return payload_out
 
 
-def _remove_session_files(source_image: str, stem: str) -> None:
-    """Best-effort cleanup of the files a session left on disk."""
-    source = Path(source_image)
-    for candidate in {source, UPLOAD_DIR / source.name, SHEET_DIR / source.name}:
-        if candidate.exists() and candidate.is_file():
-            candidate.unlink(missing_ok=True)
-    stage_dir = STAGE_DIR / stem
-    if stage_dir.is_dir() and STAGE_DIR.resolve() in stage_dir.resolve().parents:
-        shutil.rmtree(stage_dir, ignore_errors=True)
-
-
 @app.delete("/api/sessions/{session_date}", status_code=204)
 def delete_session(session_date: str) -> Response:
+    code = subject_code()
     with repository() as repo:
-        source_image = repo.session_source_image(session_date)
-        if source_image is None:
+        record = repo.session_by_date(code, session_date)
+        if record is None:
             raise HTTPException(status_code=404, detail=f"no session on {session_date}")
+        source_image = record["source_image"]
         with repo.transaction() as connection:
-            connection.execute("DELETE FROM sessions WHERE session_date = ?", (session_date,))
-    _remove_session_files(source_image, sheet_stem(source_image))
+            connection.execute(
+                "DELETE FROM sessions WHERE subject_code = ? AND session_date = ?", (code, session_date)
+            )
+    _remove_session_stage_images(sheet_stem(source_image))
     return Response(status_code=204)
 
 
@@ -610,7 +637,7 @@ def stage_image(stem: str, slug: str, width: int = 1100, v: str | None = None) -
 def sheet_image(session_date: str, width: int = 1000) -> Response:
     """The original photograph for a session, rescaled for the browser."""
     with repository() as repo:
-        record = next((r for r in repo.sessions() if r["session_date"] == session_date), None)
+        record = repo.session_by_date(subject_code(), session_date)
     if record is None:
         raise HTTPException(status_code=404, detail="session not found")
 

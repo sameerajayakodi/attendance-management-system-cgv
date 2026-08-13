@@ -26,17 +26,17 @@ REPORT = ROOT / "report" / "CS402.3_CGV_Coursework_Report.docx"
 PROTOTYPE_ZIP = ROOT / "prototype.zip"
 SUBMISSION_ZIP = ROOT / "CS402.3_Coursework_Submission.zip"
 
-EXCLUDED_DIRS = {
+EXCLUDED_DIRS: set[str] = {
     "__pycache__", "output", ".pytest_cache", ".git", ".idea", ".vscode",
     "node_modules", "dist", "uploads", ".vite",
 }
-EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".tsbuildinfo"}
-EXCLUDED_NAMES = {"package-lock.json", ".DS_Store"}
+EXCLUDED_SUFFIXES: set[str] = {".pyc", ".pyo", ".tsbuildinfo"}
+EXCLUDED_NAMES: set[str] = {"package-lock.json", ".DS_Store"}
 
 
 def add_tree(archive: zipfile.ZipFile, source: Path, prefix: str) -> int:
     """Add every file under ``source`` to the archive beneath ``prefix``."""
-    written = 0
+    written: int = 0
     for path in sorted(source.rglob("*")):
         relative = path.relative_to(source)
         if any(part in EXCLUDED_DIRS for part in relative.parts):
@@ -44,7 +44,7 @@ def add_tree(archive: zipfile.ZipFile, source: Path, prefix: str) -> int:
         if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES or not path.is_file():
             continue
         archive.write(path, Path(prefix) / relative)
-        written += 1
+        written += 1  # Increment counter
     return written
 
 
