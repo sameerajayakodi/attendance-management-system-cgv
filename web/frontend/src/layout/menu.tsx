@@ -11,7 +11,7 @@ export interface MenuItem {
   icon: ReactElement;
 }
 
-/** The navigation mirrors the three command-line programs, plus the pipeline. */
+/** The navigation mirrors the three command-line programs, */
 export const MENU: MenuItem[] = [
   { label: "Dashboard", path: "/", icon: <SpaceDashboardRoundedIcon fontSize="small" /> },
   { label: "Signing sheets", path: "/sessions", icon: <DocumentScannerRoundedIcon fontSize="small" /> },

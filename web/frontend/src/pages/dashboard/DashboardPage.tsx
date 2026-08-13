@@ -83,7 +83,7 @@ export default function DashboardPage() {
 
       {hasData && (
         <Stack direction={{ xs: "column", lg: "row" }} spacing={2.5} alignItems="stretch">
-          {/* ── Attendance per session ─────────────────────────── */}
+          {/*Attendance per session*/}
           <Card sx={{ flex: 2, minWidth: 0 }}>
             <CardContent>
               <SectionLabel>Attendance per session</SectionLabel>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* ── Below requirement ──────────────────────────────── */}
+          {/*Below requirement */}
           <Card sx={{ flex: 1, minWidth: 260 }}>
             <CardContent>
               <SectionLabel>Below the requirement</SectionLabel>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
         </Stack>
       )}
 
-      {/* ── Attendance matrix ─────────────────────────────────── */}
+      {/*Attendance matrix*/}
       {hasData && (
         <Card sx={{ mt: 2.5 }}>
           <CardContent>
