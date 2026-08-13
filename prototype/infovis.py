@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             print("error: give a student index, or use --class", file=sys.stderr)
             return 2
 
-        candidates = repository.resolve_index(arguments.index)
+        candidates: list[str] = repository.resolve_index(arguments.index)
         if not candidates:
             known = ", ".join(student.index_no for student in repository.students())
             print(f"error: '{arguments.index}' matches no student. Known indices: {known}", file=sys.stderr)
