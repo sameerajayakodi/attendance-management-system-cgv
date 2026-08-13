@@ -62,7 +62,7 @@ def print_history(repository: AttendanceRepository, index_no: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     arguments = build_argument_parser().parse_args(argv)
 
-    database = Path(arguments.db)
+    database: Path = Path(arguments.db)
     if not database.exists():
         print(f"error: no attendance database at '{database}' - run sams.py first", file=sys.stderr)
         return 2
