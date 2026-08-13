@@ -31,7 +31,7 @@ EXCLUDED_DIRS: set[str] = {
     "node_modules", "dist", "uploads", ".vite",
 }
 EXCLUDED_SUFFIXES: set[str] = {".pyc", ".pyo", ".tsbuildinfo"}
-EXCLUDED_NAMES = {"package-lock.json", ".DS_Store"}
+EXCLUDED_NAMES: set[str] = {"package-lock.json", ".DS_Store"}
 
 
 def add_tree(archive: zipfile.ZipFile, source: Path, prefix: str) -> int:
