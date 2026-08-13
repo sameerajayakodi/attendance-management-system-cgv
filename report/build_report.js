@@ -24,7 +24,6 @@ const main = require("./content_main");
 const contrib = require("./content_contributions");
 
 // ---------------------------------------------------------------------------
-//  Group members - EDIT THESE TEN LINES BEFORE SUBMISSION
 
 
 const MEMBERS = [
