@@ -23,10 +23,6 @@ const K = require("./report_kit");
 const main = require("./content_main");
 const contrib = require("./content_contributions");
 
-// ---------------------------------------------------------------------------
-//  Group members - EDIT THESE TEN LINES BEFORE SUBMISSION
-// ---------------------------------------------------------------------------
-
 const MEMBERS = [
   { name: "<< Member 1 - full name >>",  index: "<< index >>", role: "Project Lead and Systems Architect" },
   { name: "<< Member 2 - full name >>",  index: "<< index >>", role: "Image Acquisition and Pre-processing Engineer" },
