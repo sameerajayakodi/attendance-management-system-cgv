@@ -26,7 +26,7 @@ REPORT = ROOT / "report" / "CS402.3_CGV_Coursework_Report.docx"
 PROTOTYPE_ZIP = ROOT / "prototype.zip"
 SUBMISSION_ZIP = ROOT / "CS402.3_Coursework_Submission.zip"
 
-EXCLUDED_DIRS = {
+EXCLUDED_DIRS: set[str] = {
     "__pycache__", "output", ".pytest_cache", ".git", ".idea", ".vscode",
     "node_modules", "dist", "uploads", ".vite",
 }
