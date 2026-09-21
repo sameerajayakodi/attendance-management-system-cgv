@@ -356,7 +356,7 @@ class StudentDashboard:
             axes.text(
                 position,
                 value + ceiling * 0.03,
-                f"{value:.1f}",
+                f"{value:.1f}%",
                 ha="center",
                 fontsize=8,
                 color=Palette.INK_SECONDARY,
@@ -490,16 +490,17 @@ class ClassHeatmap:
         axes.set_yticklabels([f"{index}  {names.get(index, '')[:34]}" for index in students], fontsize=9)
         for line, index in enumerate(students):
             axes.text(
-                len(dates) - 0.35,
+                len(dates) - 0.25,
                 line,
                 f"{rates[index]:.0f}%",
                 va="center",
+                ha="left",
                 fontsize=9,
                 weight="bold",
                 color=Palette.INK_SECONDARY,
             )
 
-        axes.set_xlim(-0.6, len(dates) - 0.1)
+        axes.set_xlim(-0.6, len(dates) + 0.35)
         axes.set_ylim(len(students) - 0.5, -0.7)
         axes.set_title("Attendance matrix  -  CS402.3, batch 2016.1")
         axes.grid(False)
